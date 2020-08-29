@@ -10,6 +10,10 @@
     <meta name="description" content="{{ .Description | default (.Summary | default .Site.Params.description ) }}">
     <meta name="keywords" content="{{ (delimit .Keywords ",") | default .Site.Params.keywords }}">
 
+    {{ if .Site.Params.enableTwemoji }}
+      <script src="https://twemoji.maxcdn.com/v/latest/twemoji.min.js" crossorigin="anonymous"></script>
+    {{ end }}
+
     {{ template "_internal/twitter_cards.html" . }}
     {{ template "_internal/opengraph.html" . }}
 
@@ -85,14 +89,16 @@
 
     {{ hugo.Generator }}
   </head>
-
+  
   {{ $csClass := "colorscheme-light" }}
   {{ if eq .Site.Params.colorscheme "dark" }}
     {{ $csClass = "colorscheme-dark" }}
   {{ else if eq .Site.Params.colorscheme "auto" }}
     {{ $csClass = "colorscheme-auto" }}
   {{ end }}
-  <body class="{{ $csClass }}{{ if .Site.Params.rtl }} rtl{{ end }}">
+  <body class="{{ $csClass }}{{ if .Site.Params.rtl }} rtl{{ end }}"
+        onload="{{ if .Site.Params.enableTwemoji }} twemoji.parse(document.body); {{ end }}"
+  >
     <main class="wrapper">
       {{ partial "header.html" . }}
 
@@ -103,6 +109,14 @@
       {{ partial "footer.html" . }}
     </main>
 
+    {{ if .Site.IsServer }}
+      {{ $script := resources.Get "js/dark-mode.js" }}
+      <script src="{{ $script.RelPermalink }}"></script>
+    {{ else }}
+      {{ $script := resources.Get "js/dark-mode.js" | minify | fingerprint }}
+      <script src="{{ $script.RelPermalink }}"></script>
+    {{ end }}
+
     {{ range .Site.Params.custom_js }}
       <script src="{{ . | relURL }}"></script>
     {{ end }}
@@ -111,6 +125,10 @@
 
     {{ if and .Site.Params.fathomAnalytics .Site.Params.fathomAnalytics.siteID }}
       {{- partial "analytics/fathom" . -}}
+    {{ end }}
+
+    {{ if and .Site.Params.plausibleAnalytics .Site.Params.plausibleAnalytics.domain }}
+      {{- partial "analytics/plausible" . -}}
     {{ end }}
 
   </body>
